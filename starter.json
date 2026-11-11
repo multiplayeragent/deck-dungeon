@@ -1,0 +1,21 @@
+{
+  "name": "Deck Dungeon",
+  "genre": "rpg",
+  "dim": "2D",
+  "mode": "Co-op",
+  "players": "1–4",
+  "hook": "Build your deck. Guard your friends. Beat the king.",
+  "how": "Climb a branching dungeon of fights, shops and campfires. Every turn everyone plans their cards at once (attacks, blocks, heals for allies), then it all plays out; win a fight and pick a new card for your deck.",
+  "controls": "Click or tap cards to play them, then who to use them on, then End turn; tap a room on the map to vote. Keys 1–5 pick cards, Enter ends the turn",
+  "uses": [
+    ["Leaderboard", "The deepest floor each player's party reached."],
+    ["Bots", "Bots play every hero nobody has, and play for you if your timer runs out."],
+    ["Host-run rules", "The host's browser deals the cards, runs the monsters and resolves each turn; if it leaves, the next player takes over."],
+    ["Live sync", "Everyone sees each other's planned cards, so you can work together."]
+  ],
+  "ideas": [
+    "Make it a space station with robots instead of monsters",
+    "Add a card that gives an ally an extra energy",
+    "Add a treasure room that gives everyone a rare card"
+  ]
+}
