@@ -22,8 +22,8 @@
   #bar { display: flex; align-items: center; justify-content: center; gap: 10px; width: min(560px, 100%); min-height: 44px; }
   #info { flex: 1; font-size: 13px; font-weight: 700; text-align: center; text-shadow: 0 1px 3px #000c; }
   #hand { display: flex; gap: 6px; align-items: flex-end; min-height: calc(var(--cw) * 1.38 + 14px); }
-  .cd { position: relative; width: var(--cw); height: calc(var(--cw) * 1.38); box-sizing: border-box; padding: 14px 5% 5%; border-radius: 10px; border: 2px solid #ffffffcc; color: #fff;
-        background: linear-gradient(165deg, var(--c1), var(--c2)); box-shadow: 0 3px 10px #0009; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 5px; text-align: center; cursor: pointer;
+  .cd { position: relative; width: var(--cw); height: calc(var(--cw) * 1.38); box-sizing: border-box; padding: 17px 5% 4%; border-radius: 10px; border: 2px solid #ffffffcc; color: #fff;
+        background: linear-gradient(165deg, var(--c1), var(--c2)); box-shadow: 0 3px 10px #0009; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 3px; text-align: center; cursor: pointer;
         font: inherit; transition: transform .18s, filter .18s, box-shadow .18s; }
   .cd.atk { --c1: #e8604a; --c2: #8a2032; } .cd.skl { --c1: #4f8fe8; --c2: #23407e; } .cd.ally { --c1: #42c487; --c2: #15654a; }
   .cd b.cost { position: absolute; top: -8px; left: -8px; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: #ffd166; color: #3a2400; font-size: 15px; border: 2px solid #3a2400; }
@@ -40,6 +40,7 @@
   .card h2 { margin: 0 0 4px; font-size: 23px; color: var(--gold); } .card h3 { margin: 14px 0 4px; font-size: 13px; color: #b9a6ff; text-align: left; }
   .card p { margin: 6px 0; font-size: 14px; opacity: .85; }
   .card ol { margin: 0; padding-left: 24px; font-size: 14px; text-align: left; } .card li span { float: right; }
+  .card li.note { list-style: none; margin-left: -24px; opacity: .8; } /* a message, not a ranked line */
   .choices { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin: 14px 0 6px; }
   .shopc { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 13px; font-weight: 800; color: var(--gold); }
   button.go { width: 100%; min-height: 48px; margin-top: 12px; border: 0; border-radius: 12px; background: var(--gold); color: #2a1a00; font: 800 16px system-ui, sans-serif; cursor: pointer; }
@@ -61,7 +62,7 @@
   <div class="choices"><button class="svc" data-i="5">Heal 25% · 30◆</button><button class="svc" data-i="6">Remove a basic card · 50◆</button></div><button class="go" id="shopDone">Done shopping</button></div></div>
 <div class="ov" id="over" hidden><div class="card">
   <h2 id="overTitle"></h2><p id="overSub"></p>
-  <h3>Deepest floors</h3><ol id="board"><li>Loading…</li></ol>
+  <h3>Deepest floors</h3><ol id="board"><li class="note">Loading…</li></ol>
   <button class="go" id="again">New run</button><p id="overNext"></p>
 </div></div>
 <script>
@@ -612,10 +613,11 @@ function layout(F) {
   const hx = port ? 0 : 0.02 * W, hw = port ? W : W * 0.46, hy = port ? top + area * 0.48 : top, hh = port ? area * 0.52 : area;
   const s = Math.max(0.42, Math.min(ATTRACT ? 1.5 : 1.15, hh / 2 / (ATTRACT ? 140 : 175), hw / 2 / 125)); // the preview is zoomed in
   const hero = (i) => ({ x: hx + hw * (i % 2 ? 0.72 : 0.28), y: hy + hh * (i < 2 ? 0.5 : 1) - 52 * s });
-  const n = F ? F.en.length : 0, fx = port ? 0 : W * 0.5, fw = port ? W : W * 0.48, fy = top, fh = port ? area * 0.48 : area;
+  const n = F ? F.en.length : 0, boss = !!F && F.en.some((e) => FOES[e.t].big === 2), fx = port ? 0 : W * 0.5, fw = port ? W : W * 0.48, fy = top, fh = port ? area * 0.48 : area;
   const foe = (j) => {
     const big = FOES[F.en[j].t].big === 2, k = n === 1 ? 0.5 : j / (n - 1);
     if (port) return { x: fx + fw * (n === 1 ? 0.5 : 0.18 + k * 0.64), y: fy + fh * (big ? 0.8 : 0.7 - (j % 2) * 0.08) };
+    if (boss && !big) return { x: fx + fw * (k < 0.5 ? 0.1 : 0.9), y: fy + fh * 0.45 }; // the king's bats fly on either side of him, not in front
     return { x: fx + fw * (big ? 0.5 : 0.42 + (j % 2 ? 0.26 : 0)), y: big ? fy + fh * 0.82 : fy + fh * (n === 1 ? 0.65 : 0.42 + k * 0.48) };
   };
   return { s, hero, foe, cellW: hw / 2 };
@@ -655,7 +657,13 @@ function playStep(F, ev, quiet) {
   if (kind === "aoe") shake = 10;
   sfx(C ? (C.dmg ? "hit" : C.heal || C.rv ? "heal" : "guard") : kind === "atk" || kind === "aoe" ? "ouch" : "guard");
 }
-function pop(x, y, text, color, big) { pops.push({ x, y, text, color, big, t: performance.now() }); }
+/** A number or word rising from (x, y): kept below the top bar, and stacked under one still rising from the same spot. */
+function pop(x, y, text, color, big) {
+  const now = performance.now();
+  y = Math.max(ATTRACT ? 44 : 96, y);
+  while (pops.some((p) => Math.abs(p.x - x) < 60 && Math.abs(p.y - y) < 24 && now - p.t < 600)) y += 26;
+  pops.push({ x, y, text, color, big, t: now });
+}
 function burst(x, y, color, n) { for (let i = 0; i < n && bits.length < 300; i++) { const a = Math.random() * 6.28, s = 60 + Math.random() * 180; bits.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s - 80, life: 0, max: 0.4 + Math.random() * 0.4, color }); } }
 const cardClass = (code) => { const C = CARDS[code]; return C.dmg ? "atk" : C.tg === "ally" || C.tg === "party" || C.tg === "down" ? "ally" : "skl"; };
 
@@ -708,6 +716,7 @@ function drawIntent(x, y, s, e, H, run) {
   const who = kind === "atk" || kind === "wk" ? (H[tg] ? run.seats[tg].n : "") : "";
   ctx.font = `800 ${Math.round(15 * Math.max(0.8, s))}px system-ui`; ctx.textAlign = "center";
   const text = `${icon} ${label}${who ? " → " + (run.seats[tg].w === net.sessionId ? "You" : who) : ""}`, w = ctx.measureText(text).width + 14;
+  x = Math.max(w / 2 + 4, Math.min(W - w / 2 - 4, x)); // never off the side of the screen
   ctx.fillStyle = kind === "atk" || kind === "aoe" ? "#5a1420dd" : "#1d2a4add"; ctx.beginPath(); ctx.roundRect(x - w / 2, y - 14, w, 24, 12); ctx.fill();
   ctx.fillStyle = "#fff"; ctx.fillText(text, x, y + 3);
 }
@@ -754,7 +763,7 @@ function drawBattle(run, F, H, dt) {
     drawFoe(p.x, p.y, s, e, rec, j);
     bars(p.x, p.y + 10 * s, 70 * s * Math.min(1.4, big), Math.max(0, hp), e.mhp, shown.eb[j] ?? e.blk, s);
     if (!ATTRACT) { ctx.font = `700 ${Math.round(Math.max(11, 12 * s))}px system-ui`; ctx.fillStyle = "#fffc"; ctx.textAlign = "center"; const st = statusText(e); ctx.fillText(FOES[e.t].n + (st ? " · " + st : ""), p.x, p.y + 46 * s); }
-    if (P || ATTRACT) drawIntent(p.x, p.y - (78 * big + 12) * s, s, e, H, run);
+    if (P || ATTRACT) drawIntent(p.x, p.y - (big > 1.5 ? 224 : 78 * big + 12) * s, s, e, H, run); // above the head (the king: above his crown)
     ctx.globalAlpha = 1;
   });
   // cards in flight, sparks and numbers
@@ -906,11 +915,11 @@ function hud(run, F, H) {
 }
 function showBoard(floor, played) {
   const list = $("board");
-  if (!board) { list.innerHTML = "<li>Leaderboards need a connection.</li>"; return; }
-  list.innerHTML = "<li>Loading…</li>";
+  if (!board) { list.innerHTML = "<li class=\"note\">Leaderboards need a connection.</li>"; return; }
+  list.innerHTML = "<li class=\"note\">Loading…</li>";
   (played && floor > 0 ? board.submit(floor).catch(() => null) : Promise.resolve()).then(() => board.top(10)).then(({ entries }) => {
-    list.innerHTML = entries.length ? entries.map((e) => `<li>${esc(e.username || "Player")}<span>${e.score > ROWS + 1 ? "won!" : "floor " + e.score}</span></li>`).join("") : "<li>No runs yet. Set the first.</li>";
-  }).catch(() => { list.innerHTML = "<li>Couldn't load the leaderboard.</li>"; });
+    list.innerHTML = entries.length ? entries.map((e) => `<li>${esc(e.username || "Player")}<span>${e.score > ROWS + 1 ? "won!" : "floor " + e.score}</span></li>`).join("") : "<li class=\"note\">No runs yet. Set the first.</li>";
+  }).catch(() => { list.innerHTML = "<li class=\"note\">Couldn't load the leaderboard.</li>"; });
 }
 // Taps: cards in the hand, targets and map rooms on the canvas, the overlays' buttons.
 $("hand").addEventListener("pointerdown", (e) => { const b = e.target.closest(".cd"); if (b) { e.preventDefault(); tapCard(+b.dataset.i); } });
@@ -944,6 +953,7 @@ addEventListener("keydown", (e) => {
   } else if (run.ph === "map") { const o = nextNodes(run.node); if (o[n - 1] !== undefined) vote(o[n - 1]); }
 });
 for (const ev of ["pointerdown", "keydown"]) addEventListener(ev, () => { try { audio ||= new AudioContext(); } catch {} }, { once: true });
+cv.addEventListener("contextmenu", (e) => e.preventDefault());
 document.addEventListener("touchmove", (e) => e.preventDefault(), { passive: false });
 
 // ── MAIN LOOP ───────────────────────────────────────────────────────────────────────
